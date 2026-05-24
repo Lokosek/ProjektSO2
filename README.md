@@ -4,15 +4,33 @@ Projekt realizuje temat 2 z zajec: symulacje waskiego mostu laczacego miasta A i
 
 Most jest waski i slaby, dlatego w jednym momencie moze znajdowac sie na nim tylko jeden samochod. Kazdy samochod jest osobnym watkiem i nieustannie probuje przejezdzac miedzy miastami.
 
+W repozytorium sa przygotowane dwa warianty programu:
+
+- `most_semafory` - wariant a), bez zmiennych warunkowych, tylko mutex i semafory.
+- `most_warunkowe` - wariant b), z wykorzystaniem zmiennych warunkowych.
+
 ## Uzyte mechanizmy
 
-- `pthread_create()` tworzy watki samochodow.
-- `pthread_join()` czeka na zakonczenie watkow.
-- `pthread_mutex_lock()` i `pthread_mutex_unlock()` chronia wspolny stan programu.
-- `pthread_cond_wait()` usypia samochody, ktore czekaja na wolny most.
-- `pthread_cond_broadcast()` budzi samochody po zwolnieniu mostu.
-- `usleep()` symuluje czas pobytu w miescie i czas przejazdu przez most.
-- `atoi()` odczytuje liczby z argumentow linii polecen.
+Oba warianty uzywaja:
+
+- `pthread_create()` do tworzenia watkow samochodow.
+- `pthread_join()` do czekania na zakonczenie watkow.
+- `pthread_mutex_lock()` i `pthread_mutex_unlock()` do ochrony wspolnego stanu programu.
+- `usleep()` do symulowania czasu pobytu w miescie i czasu przejazdu przez most.
+- `atoi()` do odczytywania liczb z argumentow linii polecen.
+
+Wariant a), czyli `most_semafory`, dodatkowo uzywa:
+
+- `sem_init()` do inicjalizacji semaforow.
+- `sem_wait()` do usypiania samochodow czekajacych w kolejce.
+- `sem_post()` do budzenia jednego samochodu po zwolnieniu mostu.
+- `sem_destroy()` do sprzatania semaforow.
+
+Wariant b), czyli `most_warunkowe`, dodatkowo uzywa:
+
+- `pthread_cond_wait()` do usypiania samochodow czekajacych na most.
+- `pthread_cond_broadcast()` do budzenia samochodow po zwolnieniu mostu.
+- `pthread_cond_destroy()` do sprzatania zmiennej warunkowej.
 
 ## Kompilacja
 
@@ -20,26 +38,36 @@ Most jest waski i slaby, dlatego w jednym momencie moze znajdowac sie na nim tyl
 make
 ```
 
-Powstanie program:
+Powstana dwa programy:
 
 ```bash
-./bridge
+./most_semafory
+./most_warunkowe
 ```
 
 ## Uruchomienie
 
-Program wymaga liczby samochodow:
+Program wymaga liczby samochodow.
+
+Wariant bez zmiennych warunkowych:
 
 ```bash
-./bridge 10
+./most_semafory 10
 ```
 
-W tej wersji program dziala bez konca, zgodnie z trescia zadania.
+Wariant ze zmiennymi warunkowymi:
+
+```bash
+./most_warunkowe 10
+```
+
+Bez drugiego argumentu program dziala bez konca, zgodnie z trescia zadania.
 
 Do testow mozna podac opcjonalny limit przejazdow kazdego samochodu:
 
 ```bash
-./bridge 10 20
+./most_semafory 10 20
+./most_warunkowe 10 20
 ```
 
 To znaczy: utworz 10 samochodow, a kazdy samochod ma przejechac przez most 20 razy.
@@ -68,13 +96,15 @@ Gdy most jest pusty, srodek komunikatu wyglada tak:
 
 ## Jak dziala synchronizacja
 
-Program trzyma caly stan symulacji w zmiennych globalnych, takich jak `carsInA`, `carsInB`, `waitingA`, `waitingB` i `carOnBridge`.
+Program trzyma caly stan symulacji w zmiennych globalnych, takich jak `autaWMiescieA`, `autaWMiescieB`, `kolejkaA`, `kolejkaB` i `autoNaMoscie`.
 
-Dostep do tych zmiennych jest chroniony jednym mutexem `stateMutex`. Dzieki temu dwa watki nie zmieniaja jednoczesnie tych samych licznikow.
+Dostep do tych zmiennych jest chroniony jednym mutexem `mutexStanu`. Dzieki temu dwa watki nie zmieniaja jednoczesnie tych samych licznikow.
 
-Zmienna warunkowa `bridgeCondition` pozwala samochodom czekac bez aktywnego krecenia sie w petli. Samochod czeka w `pthread_cond_wait()`, dopoki most jest zajety albo dopoki pierwszenstwo ma druga strona.
+W wariancie semaforowym samochody czekaja na dwoch semaforach: osobnym dla kolejki od strony A i osobnym dla kolejki od strony B. Po zwolnieniu mostu program wybiera jedna strone, rezerwuje wjazd dla jednego samochodu i budzi dokladnie jeden watek przez `sem_post()`.
 
-Zmienna `turn` przechowuje kierunek, ktory ma pierwszenstwo, gdy kolejki sa po obu stronach mostu. Po przejezdzie samochodu program oddaje pierwszenstwo przeciwnej stronie, jesli ktos tam czeka. To ogranicza ryzyko zaglodzenia jednej strony.
+W wariancie ze zmiennymi warunkowymi samochody czekaja w `pthread_cond_wait()`. Po zwolnieniu mostu program budzi czekajace watki przez `pthread_cond_broadcast()`, a kazdy obudzony watek ponownie sprawdza, czy moze wjechac.
+
+Zmienna `czyjaKolej` przechowuje kierunek, ktory ma pierwszenstwo, gdy kolejki sa po obu stronach mostu. Po przejezdzie samochodu program oddaje pierwszenstwo przeciwnej stronie, jesli ktos tam czeka. To ogranicza ryzyko zaglodzenia jednej strony.
 
 ## Czyszczenie
 

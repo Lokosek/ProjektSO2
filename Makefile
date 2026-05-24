@@ -1,9 +1,16 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pthread
-TARGET = bridge
+TARGETS = most_warunkowe most_semafory
 
-all:
-	$(CXX) $(CXXFLAGS) src/main.cpp -o $(TARGET)
+.PHONY: all clean
+
+all: $(TARGETS)
+
+most_warunkowe: src/most_warunkowe.cpp
+	$(CXX) $(CXXFLAGS) src/most_warunkowe.cpp -o most_warunkowe
+
+most_semafory: src/most_semafory.cpp
+	$(CXX) $(CXXFLAGS) src/most_semafory.cpp -o most_semafory
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGETS) bridge bridge_condition bridge_semaphore
