@@ -1,13 +1,13 @@
-# Projekt SO2 - Waski most
+# Projekt SO2 - Waski most w jezyku C
 
-Projekt realizuje temat 2 z zajec: symulacje waskiego mostu laczacego miasta A i B.
+Projekt realizuje temat 2 z zajec: symulacje waskiego mostu laczacego miasta A i B. Calosc jest napisana w jezyku C z uzyciem watkow POSIX.
 
 Most jest waski i slaby, dlatego w jednym momencie moze znajdowac sie na nim tylko jeden samochod. Kazdy samochod jest osobnym watkiem i nieustannie probuje przejezdzac miedzy miastami.
 
 W repozytorium sa przygotowane dwa warianty programu:
 
-- `most_semafory` - wariant a), bez zmiennych warunkowych, tylko mutex i semafory.
-- `most_warunkowe` - wariant b), z wykorzystaniem zmiennych warunkowych.
+- `src/most_semafory.c` - wariant a), bez zmiennych warunkowych, tylko mutex i semafory.
+- `src/most_warunkowe.c` - wariant b), z wykorzystaniem zmiennych warunkowych.
 
 ## Uzyte mechanizmy
 
@@ -18,6 +18,7 @@ Oba warianty uzywaja:
 - `pthread_mutex_lock()` i `pthread_mutex_unlock()` do ochrony wspolnego stanu programu.
 - `usleep()` do symulowania czasu pobytu w miescie i czasu przejazdu przez most.
 - `atoi()` do odczytywania liczb z argumentow linii polecen.
+- `malloc()` i `free()` do utworzenia i zwolnienia tablic watkow oraz danych samochodow.
 
 Wariant a), czyli `most_semafory`, dodatkowo uzywa:
 
@@ -38,7 +39,7 @@ Wariant b), czyli `most_warunkowe`, dodatkowo uzywa:
 make
 ```
 
-Powstana dwa programy:
+Makefile kompiluje programy przez `gcc`. Powstana dwa programy:
 
 ```bash
 ./most_semafory
